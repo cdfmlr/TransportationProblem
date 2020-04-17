@@ -243,7 +243,7 @@ r = p.solve(tp.NorthwestCornerIniter, tp.PotentialChecker, tp.ClosedLoopAdjustme
 print(r)
 ```
 
-运行，可以得到如下输出：
+运行，得到输出的最优运量表：
 
 ```
 Transportation problem optimized successfully. Result cost (total): 232.0
@@ -252,6 +252,71 @@ Transportation problem optimized successfully. Result cost (total): 232.0
       A2	     2.0	    13.0	    12.0	     0.0	
       A3	    19.0	     0.0	     0.0	     0.0	
 ```
+
+当然，在日常使用中，我们（一般情况下）不想自己指定方法，所以 `solve` 方法的实现是带有默认参数的：
+
+```python
+def solve(self, initer_class=MinimumElementIniter, checker_class=PotentialChecker, optimizer_class=ClosedLoopAdjustmentOptimizer):
+    pass
+```
+
+使用默认参数，代码可以更加简洁：
+
+```python
+import transportation_problem as tp
+
+s = [('A1', 14), ('A2', 27), ('A3', 19)]
+d = [('B1', 22), ('B2', 13), ('B3', 12), ('B4', 13)]
+c = [[6, 7, 5, 3], [8, 4, 2, 7], [5, 9, 10, 6]]
+
+p = tp.TransportationProblem(s, d, c)
+r = p.solve()	# 默认最小元素法初始化，位势法检验，闭回路法优化调整
+print(r)
+```
+
+**另一个例子**：
+
+再看一个产销不平衡问题，来自清华大学《􏰄􏰅􏰆􏰄􏰅􏰆运筹学 第四版》的习题。产销不平衡首先要转化为产销平衡问题才能开始求解：
+
+![IMG_0B78AC4053D1-1](https://tva1.sinaimg.cn/large/007S8ZIlgy1gdx6l6qtzkj30v90jsk0g.jpg)
+
+编写代码，求解 `表4-28` 的最优调运方案：
+
+```python
+import transportation_problem as tp
+
+spy = [('A', 400), ('B', 450), ('C', 70)]
+dmd = [('甲', 290), ('甲\'', 30), ('乙', 250), ('丙', 270), ('丙\'', 80)]
+cst = [[15, 15, 18, 22, 22], [21, 21, 25, 16, 16], [999, 0, 999, 999, 0]]
+
+pbm = tp.TransportationProblem(spy, dmd, cst)
+res = pbm.solve(tp.VogelIniter)		# 伏格尔法初始化
+
+print(res)
+```
+
+对于 M，我们编程时可以给定一个对于当前问题来说充分大的值即可。具体到这个问题中，`999` 已经足够大。
+
+当然，你也可以使用一个无穷 (`numpy.inf`) 来表示 M，这样也能求出最优方案，不过 `inf` 值会导致程序无法自动求出最小运价（输出中会显示`Result cost (total): nan`），所以不推荐这样：
+
+```
+import numpy as np
+...
+cst = [[15, 15, 18, 22, 22], [21, 21, 25, 16, 16], [np.inf, 0, np.inf, np.inf, 0]]
+...
+```
+
+运行，得到结果：
+
+```
+Transportation problem optimized successfully. Result cost (total): 14650.0
+      运量	       甲	      甲'	       乙	       丙	      丙'	
+       A	   150.0	     0.0	   250.0	     0.0	     0.0	
+       B	   140.0	     0.0	     0.0	   270.0	    40.0	
+       C	     0.0	    30.0	     0.0	     0.0	    40.0	
+```
+
+输出的运量表即为最优调运方案，最小运价为 14650.0 万元。
 
 ## 开放源代码
 

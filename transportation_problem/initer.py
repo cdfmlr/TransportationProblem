@@ -11,7 +11,7 @@ class TransportationIniter(object):
         self.supply = [i[1] for i in supply]
         self.demand = [i[1] for i in demand]
         self.costs = np.array(costs)
-        self.transportation = np.zeros(self.costs.shape)  # 运量表
+        self.transportation = np.ones(self.costs.shape) * np.nan  # 运量表
 
     def init(self) -> list:
         """
@@ -78,7 +78,7 @@ class NorthwestCornerIniter(TransportationIniter):
         super().__init__(supply, demand, costs)
 
     def init(self) -> list:
-        transportation = np.zeros(self.costs.shape)  # 运量表
+        # transportation = np.zeros(self.costs.shape)  # 运量表
         r, c = 0, 0  # 从西北角，即 (r, c) = (0, 0) 开始处理，注意r对应supply，c对应demand
         while (r, c) < self.costs.shape:
             self._arrange_transportation(r, c)
@@ -110,7 +110,7 @@ class VogelIniter(TransportationIniter):
                 c_idx = -1
                 for i, c in enumerate(self.costs[r_idx]):
                     if self.demand[i] == 0:
-                        break
+                        continue
                     if c < c_min:
                         c_min = c
                         c_idx = i
@@ -123,7 +123,7 @@ class VogelIniter(TransportationIniter):
                 r_idx = -1
                 for i, r in enumerate(self.costs.T[c_idx]):
                     if self.supply[i] == 0:
-                        break
+                        continue
                     if r < r_min:
                         r_min = r
                         r_idx = i

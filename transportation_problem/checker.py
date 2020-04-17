@@ -6,19 +6,21 @@ class TransportationChecker(object):
     TransportationChecker 负责求检验数，并判断是否达到最优
     """
 
-    def __init__(self, supply: list, demand: list, costs: list, transportation: list):
+    def __init__(self, supply: list, demand: list, costs: list):
         super().__init__()
         self.supply = [i[1] for i in supply]
         self.demand = [i[1] for i in demand]
         self.costs = np.array(costs)
-        self.transportation = np.array(transportation)
+        self.transportation = np.array([])
         self.sigma = np.ones(self.costs.shape) * np.nan  # 检验数，nan 表示基变量，不需要算检验数
 
-    def check(self) -> (list, bool):
+    def check(self, transportation: list) -> (list, bool):
         """
         求检验数，并判断是否达到最优
         :return: 检验数，是否达到最优
         """
+        self.transportation = np.array(transportation)
+        self.sigma = np.ones(self.costs.shape) * np.nan     # 重置检验数！
         self._calc_sigma()
         return self.sigma, self._is_best()
 
@@ -42,6 +44,9 @@ class PotentialChecker(TransportationChecker):
     位势法
     """
 
+    def __init__(self, supply: list, demand: list, costs: list):
+        super().__init__(supply, demand, costs)
+
     def _calc_sigma(self):
         """
         位势法计算检验数
@@ -62,7 +67,7 @@ class PotentialChecker(TransportationChecker):
         while np.any(np.isnan(u)) or np.any(np.isnan(v)):
             for r_idx, row in enumerate(self.transportation):
                 for c_idx, element in enumerate(row):
-                    if element != 0:  # 基
+                    if not np.isnan(element):  # 基
                         if (not np.isnan(u[r_idx])) and np.isnan(v[c_idx]):
                             v[c_idx] = self.costs[r_idx][c_idx] - u[r_idx]
                         elif (not np.isnan(v[c_idx])) and np.isnan(u[r_idx]):
@@ -70,7 +75,7 @@ class PotentialChecker(TransportationChecker):
         # 计算非基变量检验数: $\sigma_{ij} = c_{ij} - (u_i + v_j)$
         for r_idx, row in enumerate(self.transportation):
             for c_idx, element in enumerate(row):
-                if element == 0:  # 非基
+                if np.isnan(element):  # 非基
                     self.sigma[r_idx][c_idx] = self.costs[r_idx][c_idx] - u[r_idx] - v[c_idx]
 
 

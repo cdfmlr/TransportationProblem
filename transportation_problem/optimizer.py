@@ -10,15 +10,16 @@ class TransportationOptimizer(object):
     TransportationOptimizer 运输问题的优化器
     """
 
-    def __init__(self, supply: list, demand: list, costs: list, transportation: list, sigma: list):
+    def __init__(self, supply: list, demand: list, costs: list):
         super().__init__()
+        # TODO: supply, demand, costs 在 optimizer 中好像都没用，可以考虑删除
         self.supply = [i[1] for i in supply]
         self.demand = [i[1] for i in demand]
         self.costs = np.array(costs)
-        self.transportation = np.array(transportation)
-        self.sigma = np.array(sigma)
+        self.transportation = np.array([])
+        self.sigma = np.array([])
 
-    def optimize(self) -> list:
+    def optimize(self, transportation: list, sigma: list) -> list:
         """
         优化
         :return: (新的transportation)
@@ -31,10 +32,13 @@ class ClosedLoopAdjustmentOptimizer(TransportationOptimizer):
     闭回路调整法
     """
 
-    def __init__(self, supply: list, demand: list, costs: list, transportation: list, sigma: list):
-        super().__init__(supply, demand, costs, transportation, sigma)
+    def __init__(self, supply: list, demand: list, costs: list):
+        super().__init__(supply, demand, costs)
 
-    def optimize(self) -> list:
+    def optimize(self, transportation: list, sigma: list) -> list:
+        self.transportation = np.array(transportation)
+        self.sigma = np.array(sigma)
+
         rs, cs = np.where(self.sigma < 0)
         # 这里可能会抛出 RuntimeWarning: invalid value encountered in less
         # 这没关系，参考：https://stackoverflow.com/questions/34955158/what-might-be-the-cause-of-invalid-value-encountered-in-less-equal-in-numpy
@@ -62,6 +66,8 @@ class ClosedLoopAdjustmentOptimizer(TransportationOptimizer):
         min_trans = min([self.transportation[n.row_idx][n.col_idx] for n in loop][1::2])
         # 调整，下标从0开始，所以是偶加奇减(0+, 1-, 2+, 3-)
         for i, n in enumerate(loop):
+            if np.isnan(self.transportation[n.row_idx][n.col_idx]):
+                self.transportation[n.row_idx][n.col_idx] = 0
             self.transportation[n.row_idx][n.col_idx] += min_trans - 2 * (i % 2) * min_trans
 
 
@@ -72,8 +78,8 @@ def _closed_loop_adjustment_optimizer_test():
     ct = [[0, 5, 4, 3], [2, 8, 3, 4], [1, 7, 6, 2]]
     tp = [[1500, 500, 500, 0], [0, 0, 2500, 0], [0, 1500, 0, 3500]]
     sg = [[np.nan, np.nan, np.nan, 3], [3, 4, np.nan, 5], [-1, np.nan, 0, np.nan]]
-    optimizer = ClosedLoopAdjustmentOptimizer(sp, dm, ct, tp, sg)
-    t = optimizer.optimize()
+    optimizer = ClosedLoopAdjustmentOptimizer(sp, dm, ct)
+    t = optimizer.optimize(tp, sg)
     print(t)
 
 

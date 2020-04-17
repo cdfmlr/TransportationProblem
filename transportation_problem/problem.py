@@ -1,6 +1,6 @@
-from transportation_problem.initer import TransportationIniter
-from transportation_problem.checker import TransportationChecker
-from transportation_problem.optimizer import TransportationOptimizer
+from transportation_problem.initer import TransportationIniter, MinimumElementIniter
+from transportation_problem.checker import TransportationChecker, PotentialChecker
+from transportation_problem.optimizer import TransportationOptimizer, ClosedLoopAdjustmentOptimizer
 
 import numpy as np
 
@@ -26,25 +26,31 @@ class TransportationProblem(object):
         self.costs = costs
         self.result = None
 
-    def solve(self, initer, checker, optimizer):
+    def solve(self, initer_class=MinimumElementIniter, checker_class=PotentialChecker, optimizer_class=ClosedLoopAdjustmentOptimizer):
         """
         对运输问题当前问题求解
-        :param initer:    初始方案求解器，TransportationIniter 的子类
-        :param checker:   最优方案检验器，TransportationChecker 的子类
-        :param optimizer: 运输方案优化器，TransportationOptimizer 的子类
+        :param initer_class:    初始方案求解器，TransportationIniter 的子类
+        :param checker_class:   最优方案检验器，TransportationChecker 的子类
+        :param optimizer_class: 运输方案优化器，TransportationOptimizer 的子类
         :return: 若求解成功则返回 TransportationResult ，否则为 None
         """
-        assert issubclass(initer, TransportationIniter)
-        assert issubclass(checker, TransportationChecker)
-        assert issubclass(optimizer, TransportationOptimizer)
+        assert issubclass(initer_class, TransportationIniter)
+        assert issubclass(checker_class, TransportationChecker)
+        assert issubclass(optimizer_class, TransportationOptimizer)
         # TODO: check 产销平衡
 
         try:
-            transportation = initer(self.supply, self.demand, self.costs).init()
-            sigma, ok = checker(self.supply, self.demand, self.costs, transportation).check()
-            while not ok:
-                transportation = optimizer(self.supply, self.demand, self.costs, transportation, sigma).optimize()
-                sigma, ok = checker(self.supply, self.demand, self.costs, transportation).check()
+            # 实例化各个组件
+            initer = initer_class(self.supply, self.demand, self.costs)
+            checker = checker_class(self.supply, self.demand, self.costs)
+            optimizer = optimizer_class(self.supply, self.demand, self.costs)
+            # 初始化
+            transportation = initer.init()
+            # 检验、调整，迭代求解
+            sigma, is_best = checker.check(transportation)
+            while not is_best:
+                transportation = optimizer.optimize(transportation, sigma)
+                sigma, is_best = checker.check(transportation)
 
             return TransportationResult(self, transportation)
         except Exception as e:
@@ -58,6 +64,10 @@ class TransportationResult(object):
     """
 
     def __init__(self, problem: TransportationProblem, transportation):
+        for i, row in enumerate(transportation):
+            for j, element in enumerate(row):
+                if np.isnan(element):
+                    transportation[i][j] = 0.0
         self.problem = problem
         self.transportation = transportation
         self.total_cost = np.sum(np.array(problem.costs) * np.array(transportation))
