@@ -34,18 +34,6 @@ class ClosedLoopAdjustmentOptimizer(TransportationOptimizer):
     def __init__(self, supply: list, demand: list, costs: list, transportation: list, sigma: list):
         super().__init__(supply, demand, costs, transportation, sigma)
 
-    class ClosedLoopNode(object):
-        """
-        闭回路节点
-        """
-
-        def __init__(self, row_idx, col_idx):
-            self.row_idx = row_idx
-            self.col_idx = col_idx
-
-        def __str__(self):
-            return f'ClosedLoopNode<{self.row_idx}, {self.col_idx}>'
-
     def optimize(self) -> list:
         rs, cs = np.where(self.sigma < 0)
         # 这里可能会抛出 RuntimeWarning: invalid value encountered in less
@@ -71,7 +59,6 @@ class ClosedLoopAdjustmentOptimizer(TransportationOptimizer):
         :return: None
         """
         # 闭回路中最小的运量，下标从0开始，所以取奇数(1, 3)
-        debug = [self.transportation[n.row_idx][n.col_idx] for n in loop][1::2]
         min_trans = min([self.transportation[n.row_idx][n.col_idx] for n in loop][1::2])
         # 调整，下标从0开始，所以是偶加奇减(0+, 1-, 2+, 3-)
         for i, n in enumerate(loop):
