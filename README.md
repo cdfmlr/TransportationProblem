@@ -1,7 +1,32 @@
 # TransportationProblem
  求解产销平衡的运输问题。
 
-[TOC]
+## Getting Started
+
+Install this package:
+
+```shell
+$ pip install TransportationProblem
+```
+
+Utilize it to solve a transportation problem:
+
+```python
+>>> import transportation_problem as tp
+>>> s = [('A1', 14), ('A2', 27), ('A3', 19)]	# 产地
+>>> d = [('B1', 22), ('B2', 13), ('B3', 12), ('B4', 13)]	# 销地
+>>> c = [[6, 7, 5, 3], [8, 4, 2, 7], [5, 9, 10, 6]]	# 运价
+>>> p = tp.TransportationProblem(s, d, c)
+>>> r = p.solve()
+>>> print(r)
+Transportation problem optimized successfully. Result cost (total): 232.0
+      运量	      B1	      B2	      B3	      B4	
+      A1	     1.0	     0.0	     0.0	    13.0	
+      A2	     2.0	    13.0	    12.0	     0.0	
+      A3	    19.0	     0.0	     0.0	     0.0	
+```
+
+
 
 ## 产销平衡的运输问题
 
